@@ -1,3 +1,3 @@
 {
-  ["Test"] = "ale32bit/test.lua",
+  ["Test"] = "ale32bit/test",
 }
