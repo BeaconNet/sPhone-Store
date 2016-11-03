@@ -1,0 +1,22 @@
+--
+-- sPhone Application Package
+-- Built with SPK builder 1
+--
+{
+  files = "{\
+  [ \"exa.lua\" ] = \"print(\\\"This is an example file\\\")\\\
+print(spk.getID())\\\
+print(spk.getPath())\\\
+print(spk.getName())\\\
+print(spk.getAuthor())\\\
+print(spk.getVersion())\\\
+\",\
+}",
+  config = "{\
+  main = \"exa.lua\",\
+  name = \"SPK Example\",\
+  id = \"sphone.examplespk\",\
+  author = \"BeaconNet\",\
+  version = 1.3,\
+}",
+}
