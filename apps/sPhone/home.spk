@@ -145,5 +145,6 @@
   id = \"sphone.home\",\
   version = 1,\
   author = \"BeaconNet\",\
+  type = \"home\",\
 }",
 }
