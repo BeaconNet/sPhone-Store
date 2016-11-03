@@ -1,6 +1,6 @@
 --
 -- sPhone Application Package
--- Built with SPK builder 1
+-- Built with SPK builder 1.1
 --
 {
   files = "{\
@@ -10,6 +10,8 @@ print(spk.getPath())\\\
 print(spk.getName())\\\
 print(spk.getAuthor())\\\
 print(spk.getVersion())\\\
+print(\\\"Press any key\\\")\\\
+os.pullEvent(\\\"key\\\")\\\
 \",\
 }",
   config = "{\
