@@ -1,0 +1,769 @@
+--
+-- sPhone Application Package
+-- Built with SPK builder 1
+--
+{
+  files = "{\
+  [ \"bluecloud.lua\" ] = \"local oldPullEvent = os.pullEvent\\\
+os.pullEvent = os.pullEventRaw\\\
+\\\
+local args = {...}\\\
+\\\
+local argData = {\\\
+	[\\\"-c\\\"] = false,\\\
+	[\\\"--classic\\\"] = false,\\\
+}\\\
+\\\
+if #args > 0 then\\\
+  while #args > 0 do\\\
+    local arg = table.remove(args, 1)\\\
+    if argData[arg] ~= nil then\\\
+      argData[arg] = true\\\
+    end\\\
+  end\\\
+end\\\
+\\\
+local w, h = term.getSize()\\\
+local bar = window.create(term.current(),1,1, w, 1, true)\\\
+local newT = window.create(term.current(),1,2,w,h-1,true)\\\
+local oldTerm = term.current()\\\
+local version = 1\\\
+local oldColor = term.isColor\\\
+local channel = 47500\\\
+\\\
+if argData[\\\"-c\\\"] or argData[\\\"--classic\\\"] then\\\
+	term.isColor = function() return false end\\\
+end\\\
+\\\
+local background, text, headerbackground, headertext, buttonbackground, buttontext, closebackground, closetext,windowside, dircolor\\\
+if term.isColor() then\\\
+	background = colors.white\\\
+	text = colors.black\\\
+	headerbackground = colors.blue\\\
+	headertext = colors.white\\\
+	buttonbackground = colors.blue\\\
+	buttontext = colors.white\\\
+	closebackground = colors.red\\\
+	closetext = colors.white\\\
+	windowside = colors.lightBlue\\\
+	dircolor = colors.lime\\\
+else\\\
+	background = colors.black\\\
+	text = colors.white\\\
+	headerbackground = colors.white\\\
+	headertext = colors.black\\\
+	buttonbackground = colors.white\\\
+	buttontext = colors.black\\\
+	closebackground = colors.gray\\\
+	closetext = colors.white\\\
+	windowside = colors.lightGray\\\
+	dircolor = colors.gray\\\
+end\\\
+\\\
+local tr = {}\\\
+if term.isColor() then\\\
+	tr.upload = \\\"Upload\\\"\\\
+	tr.download = \\\"Download\\\"\\\
+	tr.delete = \\\"Delete\\\"\\\
+	tr.list = \\\"List\\\"\\\
+	tr.account = \\\"Account\\\"\\\
+	tr.login = \\\"Login\\\"\\\
+	tr.register = \\\"Register\\\"\\\
+else\\\
+	tr.upload = \\\"[1] Upload\\\"\\\
+	tr.download = \\\"[2] Download\\\"\\\
+	tr.delete = \\\"[3] Delete\\\"\\\
+	tr.list = \\\"[4] List\\\"\\\
+	tr.account = \\\"[5] Account\\\"\\\
+	tr.login = \\\"[1] Login\\\"\\\
+	tr.register = \\\"[2] Register\\\"\\\
+end\\\
+\\\
+term.setBackgroundColor(background)\\\
+term.setTextColor(text)\\\
+term.clear()\\\
+term.setCursorPos(1,1)\\\
+print(\\\"Starting up BlueCloud Client \\\"..version..\\\"...\\\")\\\
+if not fs.exists(spk.getDataPath()..\\\"/.cred\\\") then\\\
+	local tab = {\\\
+		username = false,\\\
+		password = false,\\\
+	}\\\
+	local f = spk.open(\\\".cred\\\",\\\"w\\\")\\\
+	f.write(textutils.serialize(tab))\\\
+	f.close()\\\
+end\\\
+\\\
+local modem = peripheral.find(\\\"modem\\\")\\\
+if not modem then\\\
+	print(\\\"Cannot find modem\\\")\\\
+	return\\\
+end\\\
+\\\
+term.redirect(newT)\\\
+\\\
+\\\
+local function redrawBar()\\\
+	bar.setBackgroundColor(headerbackground)\\\
+	bar.setTextColor(headertext)\\\
+	bar.clear()\\\
+	bar.setCursorPos(2,1)\\\
+	bar.write(\\\"BlueCloud \\\"..version)\\\
+	bar.setCursorPos(w,1)\\\
+	bar.setBackgroundColor(closebackground)\\\
+	bar.setTextColor(closetext)\\\
+	bar.write(\\\"X\\\")\\\
+end\\\
+\\\
+local function list(path, opt)\\\
+	term.redirect(oldTerm)\\\
+	opt = opt or {}\\\
+	opt.bg1 = opt.bg1 or colors.white\\\
+	opt.fg1 = opt.fg1 or text\\\
+	opt.fg1b = opt.fg1b or dircolor\\\
+	opt.bg2 = opt.bg2 or headerbackground\\\
+	opt.fg2 = opt.fg2 or headertext\\\
+	opt.bg3 = opt.bg3 or closebackground\\\
+	opt.fg3 = opt.fg3 or closetext\\\
+	opt.output = opt.output or true\\\
+	opt.list = opt.list or false\\\
+	if not path then\\\
+		path = \\\"\\\"\\\
+	end\\\
+	if not fs.isDir(path) and not opt.list then\\\
+		error(\\\"Invalid path\\\")\\\
+	end\\\
+	local scroll = 0\\\
+	local items\\\
+	local w, h\\\
+	local function rebuild()\\\
+		local files, dirs = {}, {}\\\
+		items = {}\\\
+		local flist\\\
+		if not opt.list then\\\
+			flist = fs.list(path)\\\
+		else\\\
+			flist = opt.list\\\
+		end\\\
+		for i, v in ipairs(flist) do\\\
+			if fs.isDir(fs.combine(path, v)) then\\\
+				table.insert(dirs, v)\\\
+			else\\\
+				table.insert(files, v)\\\
+			end\\\
+		end\\\
+		table.sort(files)\\\
+		table.sort(dirs)\\\
+		for i, v in ipairs(dirs) do\\\
+			table.insert(items, v)\\\
+		end\\\
+		for i, v in ipairs(files) do\\\
+			table.insert(items, v)\\\
+		end\\\
+		scroll = 0\\\
+	end\\\
+	rebuild()\\\
+	local setVisible = term.current().setVisible\\\
+		or function()end\\\
+	local function redraw()\\\
+		w, h = term.getSize()\\\
+		setVisible(false)\\\
+		term.setBackgroundColor(opt.bg1)\\\
+		term.clear()\\\
+		for i = scroll + 1, h + scroll - 1 do\\\
+			local str = items[i]\\\
+			if str then\\\
+				term.setCursorPos(2, 1 + i - scroll)\\\
+				local isDir = fs.isDir(fs.combine(path, str))\\\
+				term.setTextColor(isDir and opt.fg1b or opt.fg1)\\\
+				local _w = w - (isDir and 2 or 1)\\\
+				if #str > _w then\\\
+					str = str:sub(1, _w - 2) .. \\\"..\\\"\\\
+				end\\\
+				if isDir then\\\
+					str = str .. \\\"/\\\"\\\
+				end\\\
+				term.write(str)\\\
+			end\\\
+		end\\\
+		term.setBackgroundColor(opt.bg2)\\\
+		term.setTextColor(opt.fg2)\\\
+		term.setCursorPos(1, 1)\\\
+		term.clearLine()\\\
+		local _path = path .. \\\"/\\\"\\\
+		if #_path > w - 2 then\\\
+			_path = \\\"..\\\" .. _path:sub(-w + 4)\\\
+		end\\\
+		term.write(_path)\\\
+		term.setBackgroundColor(opt.bg3)\\\
+		term.setTextColor(opt.fg3)\\\
+		term.setCursorPos(w, 1)\\\
+		term.write(\\\"X\\\")\\\
+		term.setCursorPos(w, 2)\\\
+		term.write(\\\"^\\\")\\\
+		term.setCursorPos(w, h)\\\
+		term.write(\\\"v\\\")\\\
+		setVisible(true)\\\
+	end\\\
+	while true do\\\
+		redraw()\\\
+		local ev = {os.pullEventRaw()}\\\
+		if ev[1] == \\\"terminate\\\" then\\\
+			return nil\\\
+		elseif ev[1] == \\\"mouse_scroll\\\" and ev[4] > 1 then\\\
+			scroll = scroll + ev[2]\\\
+		elseif ev[1] == \\\"mouse_click\\\" and ev[2] == 1 then\\\
+			if ev[3] == w then\\\
+				if ev[4] == 1 then\\\
+					return nil\\\
+				elseif ev[4] == 2 then\\\
+					scroll = scroll - 1\\\
+				elseif ev[4] == h then\\\
+					scroll = scroll + 1\\\
+				end\\\
+			elseif ev[3] < w and ev[4] == 1 then\\\
+				path = fs.getDir(path)\\\
+				if path == \\\"..\\\" then\\\
+					path = \\\"\\\"\\\
+				end\\\
+				rebuild()\\\
+			elseif ev[3] < w and ev[4] > 1 then\\\
+				local item = items[ev[4] + scroll - 1]\\\
+				if item then\\\
+					local fullPath = fs.combine(path, item)\\\
+					if fs.isDir(fullPath) then\\\
+						path = fullPath\\\
+						rebuild()\\\
+					else\\\
+						if opt.output then\\\
+							return fullPath\\\
+						end\\\
+					end\\\
+				end\\\
+			end\\\
+		end\\\
+		scroll = math.min(math.max(0, scroll), math.max(0, #items - h + 1))\\\
+	end\\\
+end\\\
+\\\
+local function info(messages, title)\\\
+	local w,h = term.getSize()\\\
+	local sx = 4\\\
+	local sy = 2\\\
+	local ex = w - 6\\\
+	local ey = sx + 2 + #messages\\\
+	\\\
+	local win = window.create(term.current(),sx,sy,ex,ey,true)\\\
+	local old = term.current()\\\
+	term.redirect(win)\\\
+	\\\
+	local w,h = term.getSize()\\\
+	\\\
+	paintutils.drawBox(1,1,w,h,windowside)\\\
+	paintutils.drawFilledBox(2,2,w-1,h-1,background)\\\
+	if not title then\\\
+		title = \\\"BlueCloud\\\"\\\
+	end\\\
+	if pocket then\\\
+		term.setCursorPos(math.ceil(w/2)-math.ceil(#title/2)+1,1)\\\
+	else\\\
+		term.setCursorPos(math.ceil(w/2)-math.ceil(#title/2),1)\\\
+	end\\\
+	\\\
+	term.setBackgroundColor(windowside)\\\
+	term.setTextColor(buttontext)\\\
+	write(title)\\\
+	\\\
+	if pocket then\\\
+		term.setCursorPos(math.ceil(w/2),h)\\\
+	else\\\
+		term.setCursorPos(math.ceil(w/2)-1,h)\\\
+	end\\\
+	\\\
+	term.setBackgroundColor(background)\\\
+	term.setTextColor(buttonbackground)\\\
+	\\\
+	write(\\\"OK\\\")\\\
+	\\\
+	term.setBackgroundColor(background)\\\
+	term.setTextColor(text)\\\
+	local y = sy+2\\\
+	for i = 1,#messages do\\\
+		if pocket then\\\
+			term.setCursorPos(math.ceil(w/2)-math.ceil(#messages[i]/2)+1,y)\\\
+		else\\\
+			term.setCursorPos(math.ceil(w/2)-math.ceil(#messages[i]/2),y)\\\
+		end\\\
+		write(messages[i])\\\
+		y = y + 1\\\
+	end\\\
+	\\\
+	local w,h = term.getSize()\\\
+	\\\
+	local minOk\\\
+	if pocket then\\\
+		minOk = math.ceil(w/2)\\\
+	else\\\
+		minOk = math.ceil(w/2)-1\\\
+	end\\\
+	local maxOk = minOk+1\\\
+	term.redirect(old)\\\
+	while true do\\\
+		local e = {os.pullEvent()}\\\
+		if e[1] == \\\"key\\\" and e[2] == 28 then\\\
+			return\\\
+		elseif e[1] == \\\"mouse_click\\\" and e[3] >= minOk and e[3] <= maxOk and e[4] == h then\\\
+			return\\\
+		end\\\
+	end\\\
+end\\\
+\\\
+local function send(message)\\\
+	local f = spk.open(\\\".cred\\\",\\\"r\\\")\\\
+	local cred = textutils.unserialize(f.readAll())\\\
+	f.close()\\\
+	\\\
+	if not cred.username or not cred.password then\\\
+		return false, \\\"Wrong credentials\\\"\\\
+	end\\\
+	local tab = {\\\
+		user = cred.username,\\\
+		password = cred.password,\\\
+	}\\\
+	\\\
+	if type(message) ~= \\\"table\\\" then\\\
+		return false, \\\"invalid argument\\\"\\\
+	end\\\
+	\\\
+	for k,v in pairs(message) do\\\
+		tab[k] = v\\\
+	end\\\
+	\\\
+	modem.open(channel)\\\
+	modem.transmit(channel,os.getComputerID(),base64.encode(\\\
+		textutils.serialize(tab)\\\
+	))\\\
+	local timeout = os.startTimer(5)\\\
+	while true do\\\
+		local e = {os.pullEvent()}\\\
+		if e[1] == \\\"timer\\\" and e[2] == timeout then\\\
+			return false, \\\"timeout\\\"\\\
+		elseif e[1] == \\\"terminate\\\" then\\\
+			return false, \\\"timeout\\\"\\\
+		elseif e[1] == \\\"modem_message\\\" then\\\
+			if e[3] == channel and e[4] == os.getComputerID() then\\\
+				return true, textutils.unserialize(base64.decode(e[5])).result\\\
+			end\\\
+		end\\\
+	end\\\
+	modem.close(channel)\\\
+end\\\
+\\\
+local function center(text,y)\\\
+	if not text then\\\
+		error(\\\"bad argument: string expected, got nil\\\",2)\\\
+	end\\\
+	if not y then\\\
+		local _, y = term.getCursorPos()\\\
+	end\\\
+	local w, h = term.getSize()\\\
+	if pocket then\\\
+		term.setCursorPos(math.ceil(w/2) - math.ceil(#text/2) + 1, y)\\\
+	else\\\
+		term.setCursorPos(math.ceil(w/2) - math.ceil(#text/2), y)\\\
+	end\\\
+	write(text)\\\
+end\\\
+\\\
+local function upload()\\\
+	local file\\\
+	if term.isColor() then\\\
+		file = list()\\\
+		term.redirect(newT)\\\
+		redrawBar()\\\
+		if not file then\\\
+			return\\\
+		end\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		center(\\\"Upload\\\", 2)\\\
+	else\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		center(\\\"Upload\\\", 2)\\\
+		term.setCursorPos(2,4)\\\
+		write(\\\"File: /\\\")\\\
+		file = read()\\\
+		if not fs.exists(file) or fs.isDir(file) then\\\
+			print(\\\" No such file\\\")\\\
+			sleep(2)\\\
+			return\\\
+		end\\\
+	end\\\
+	\\\
+	if term.isColor() then\\\
+		term.setCursorPos(2,4)\\\
+	else\\\
+		term.setCursorPos(2,6)\\\
+	end\\\
+	write(\\\"Save as: \\\")\\\
+	local name = read()\\\
+	\\\
+	if not fs.exists(file) or fs.isDir(file) then\\\
+		info({\\\"File not found\\\",file},\\\"Upload Result\\\")\\\
+		return\\\
+	end\\\
+	\\\
+	local f = fs.open(file,\\\"r\\\")\\\
+	content = f.readAll()\\\
+	f.close()\\\
+	\\\
+	local status, msg = send({\\\
+		protocol = \\\"upload\\\",\\\
+		name = name,\\\
+		content = content,\\\
+	})\\\
+	info({msg},\\\"Upload Status\\\")\\\
+end\\\
+\\\
+local function download()\\\
+	local file\\\
+	if term.isColor() then\\\
+		local status, msg = send({\\\
+			protocol = \\\"list\\\",\\\
+		})\\\
+		if not status then\\\
+			info({\\\"Cannot show list\\\"},\\\"List Result\\\")\\\
+			return\\\
+		end\\\
+		file = list(nil,{list = msg})\\\
+		term.redirect(newT)\\\
+		redrawBar()\\\
+		if not file then\\\
+			return\\\
+		end\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		center(\\\"Download\\\", 2)\\\
+	else\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		\\\
+		center(\\\"Download\\\", 2)\\\
+		term.setCursorPos(2,4)\\\
+		write(\\\"File: \\\")\\\
+		local file = read()\\\
+		if file == \\\"\\\" then\\\
+			return\\\
+		end\\\
+	end\\\
+	local status, msg = send({\\\
+		protocol = \\\"download\\\",\\\
+		name = file,\\\
+	})\\\
+	\\\
+	if not status then\\\
+		info({\\\"File not found\\\"},\\\"Download Status\\\")\\\
+	end\\\
+	if term.isColor() then\\\
+		term.setCursorPos(2,4)\\\
+	else\\\
+		term.setCursorPos(2,6)\\\
+	end\\\
+	\\\
+	write(\\\"Save as: /\\\")\\\
+	local save = read()\\\
+	if save == \\\"\\\" then\\\
+		return\\\
+	end\\\
+	local f = fs.open(save,\\\"w\\\")\\\
+	f.write(msg)\\\
+	f.close()\\\
+	info({\\\"Downloaded as\\\",save},\\\"Download Status\\\")\\\
+end\\\
+\\\
+local function delete()\\\
+	local file\\\
+	local msg\\\
+	if term.isColor() then\\\
+		status, msg = send({\\\
+			protocol = \\\"list\\\",\\\
+		})\\\
+		if not status then\\\
+			info({\\\"Cannot show list\\\"},\\\"List Result\\\")\\\
+			return\\\
+		end\\\
+		file = list(nil,{list = msg})\\\
+		term.redirect(newT)\\\
+		redrawBar()\\\
+		if not file then\\\
+			return\\\
+		end\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		center(\\\"Delete\\\", 2)\\\
+	else\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		\\\
+		center(\\\"Delete\\\", 2)\\\
+		term.setCursorPos(2,4)\\\
+		write(\\\"File: \\\")\\\
+		local file = read()\\\
+		if file == \\\"\\\" then\\\
+			return\\\
+		end\\\
+	end\\\
+	\\\
+	local status, msg = send({\\\
+		protocol = \\\"delete\\\",\\\
+		name = file,\\\
+	})\\\
+	\\\
+	if not status then\\\
+		info({\\\"File not found\\\"},\\\"Delete Status\\\")\\\
+		return\\\
+	end\\\
+	info({file,\\\"deleted\\\"},\\\"Delete Status\\\")\\\
+end\\\
+\\\
+local function getList()\\\
+	local w,h = term.getSize()\\\
+	term.setBackgroundColor(background)\\\
+	term.setTextColor(text)\\\
+	term.clear()\\\
+	term.setCursorPos(1,1)\\\
+	local status, msg = send({\\\
+		protocol = \\\"list\\\",\\\
+	})\\\
+	if not status then\\\
+		info({\\\"Cannot show list\\\"},\\\"List Result\\\")\\\
+		return\\\
+	end\\\
+	if term.isColor() then\\\
+		list(nil,{list = msg, output = false})\\\
+		term.redirect(newT)\\\
+		redrawBar()\\\
+	else\\\
+		textutils.pagedTabulate(msg)\\\
+		while true do\\\
+			local e = {os.pullEvent()}\\\
+			if e[1] == \\\"key\\\" and e[2] == 45 then\\\
+				return\\\
+			elseif e[1] == \\\"mouse_click\\\" and e[3] == w and e[4] == 1 then\\\
+				return\\\
+			end\\\
+		end\\\
+	end\\\
+end\\\
+\\\
+local function account()\\\
+\\\
+	local function redraw()\\\
+		redrawBar()\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		paintutils.drawFilledBox(2,2,w-1,4,buttonbackground)\\\
+		term.setTextColor(buttontext)\\\
+		center(tr.login,3)\\\
+		\\\
+		paintutils.drawFilledBox(2,6,w-1,8,buttonbackground)\\\
+		term.setTextColor(buttontext)\\\
+		center(tr.register,7)\\\
+	end\\\
+	\\\
+	local function login()\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		term.setCursorPos(2,2)\\\
+		write(\\\"Username: \\\")\\\
+		local user = read()\\\
+		term.setCursorPos(2,4)\\\
+		write(\\\"Password: \\\")\\\
+		local pw = sha256.sha256(read(\\\"*\\\"))\\\
+		\\\
+		local f = spk.open(\\\".cred\\\",\\\"w\\\")\\\
+		f.write(textutils.serialize({\\\
+			username = user,\\\
+			password = pw,\\\
+		}))\\\
+		f.close()\\\
+		\\\
+	end\\\
+	\\\
+	local function register()\\\
+		term.setBackgroundColor(background)\\\
+		term.setTextColor(text)\\\
+		term.clear()\\\
+		term.setCursorPos(2,2)\\\
+		write(\\\"Username: \\\")\\\
+		local user = read()\\\
+		term.setCursorPos(2,4)\\\
+		write(\\\"Password: \\\")\\\
+		local pw = sha256.sha256(read(\\\"*\\\"))\\\
+		term.setCursorPos(2,6)\\\
+		write(\\\"Repeat: \\\")\\\
+		local rp = sha256.sha256(read(\\\"*\\\"))\\\
+		if pw ~= rp then\\\
+			info({\\\"Passwords\\\", \\\"do not\\\", \\\"match\\\"},\\\"Register Status\\\")\\\
+			return\\\
+		end\\\
+		\\\
+		local status, msg = send({\\\
+			protocol = \\\"register\\\",\\\
+			user = user,\\\
+			password = pw,\\\
+		})\\\
+		\\\
+		local msg\\\
+		if status then\\\
+			msg = {\\\"Account\\\",\\\"created\\\"}\\\
+		else\\\
+			msg = {\\\"Account\\\",\\\"already\\\",\\\"exists\\\"}\\\
+		end\\\
+		info(msg,\\\"Register Status\\\")\\\
+		\\\
+		if status then\\\
+			local f = spk.open(\\\".cred\\\",\\\"w\\\")\\\
+			f.write(textutils.serialize({\\\
+				username = user,\\\
+				password = pw,\\\
+			}))\\\
+			f.close()\\\
+		end\\\
+		\\\
+	end\\\
+	\\\
+	\\\
+	\\\
+	while true do\\\
+		redraw()\\\
+		local e = {os.pullEvent()}\\\
+		local event = e[1]\\\
+		if event == \\\"mouse_click\\\" then\\\
+			if e[3] == w and e[4] == 1 then\\\
+				break\\\
+			end\\\
+			local x, y = e[3], e[4]\\\
+			if (x >= 2 and y >= 3) and (x <= w-1 and y <= 5) then\\\
+				login()\\\
+			elseif (x >= 2 and y >= 7) and (x <= w-1 and y <= 9) then\\\
+				register()\\\
+			end\\\
+		elseif event == \\\"key\\\" then\\\
+			key = e[2]\\\
+			if key == (45 or 14 or 56 or 29) then\\\
+				sleep(0)\\\
+				break\\\
+			elseif key == 2 then\\\
+				sleep(0)\\\
+				login()\\\
+			elseif key == 3 then\\\
+				sleep(0)\\\
+				register()\\\
+			end\\\
+		elseif event == \\\"terminate\\\" then\\\
+			break\\\
+		end\\\
+	end\\\
+end\\\
+\\\
+local function redraw()\\\
+	redrawBar()\\\
+	term.setBackgroundColor(background)\\\
+	term.setTextColor(text)\\\
+	term.clear()\\\
+	\\\
+	local newW = math.ceil(w/2)\\\
+	paintutils.drawFilledBox(2,2,newW-1,4,buttonbackground)\\\
+	term.setTextColor(buttontext)\\\
+	local text = tr.upload\\\
+	term.setCursorPos(math.ceil(newW/2)-math.ceil(#text/2),3)\\\
+	write(text)\\\
+	\\\
+	local newW = math.ceil(w/2)\\\
+	paintutils.drawFilledBox(newW+1,2,w-1,4,buttonbackground)\\\
+	term.setTextColor(buttontext)\\\
+	local text = tr.download\\\
+	term.setCursorPos(newW + math.ceil(newW/2)-math.ceil(#text/2),3)\\\
+	write(text)\\\
+	\\\
+	paintutils.drawFilledBox(2,6,w-1,8,buttonbackground)\\\
+	term.setTextColor(buttontext)\\\
+	center(tr.delete,7)\\\
+	\\\
+	paintutils.drawFilledBox(2,10,w-1,12,buttonbackground)\\\
+	term.setTextColor(buttontext)\\\
+	center(tr.list,11)\\\
+	\\\
+	paintutils.drawFilledBox(2,14,w-1,16,buttonbackground)\\\
+	term.setTextColor(buttontext)\\\
+	center(tr.account,15)\\\
+end\\\
+\\\
+while true do\\\
+	redraw()\\\
+	local e = {os.pullEvent()}\\\
+	local event = e[1]\\\
+	if event == \\\"mouse_click\\\" then\\\
+		local x = e[3]\\\
+		local y = e[4]\\\
+		if x == w and y == 1 then\\\
+			break\\\
+		end\\\
+		\\\
+		local newW = math.ceil(w/2)\\\
+		if (x >= 2 and y >= 3) and (x <= newW-1 and y <= 5) then\\\
+			upload()\\\
+		elseif (x >= newW+2 and y >= 3) and (x <= w-1 and y <= 5) then\\\
+			download()\\\
+		elseif (x >= 2 and y >= 7) and (x <= w-1 and y <= 9) then\\\
+			delete()\\\
+		elseif (x >= 2 and y >= 11) and (x <= w-1 and y <= 13) then\\\
+			getList()\\\
+		elseif (x >= 2 and y >= 15) and (x <= w-1 and y <= 17) then\\\
+			account()\\\
+		end\\\
+	elseif event == \\\"key\\\" then\\\
+		key = e[2]\\\
+		if key == (45 or 14 or 56 or 29) then\\\
+			sleep(0)\\\
+			break\\\
+		elseif key == 2 then\\\
+			upload()\\\
+		elseif key == 3 then\\\
+			download()\\\
+		elseif key == 4 then\\\
+			delete()\\\
+		elseif key == 5 then\\\
+			getList()\\\
+		elseif key == 6 then\\\
+			account()\\\
+		end\\\
+	elseif event == \\\"terminate\\\" then\\\
+		break\\\
+	end\\\
+end\\\
+\\\
+term.redirect(oldTerm)\\\
+\\\
+term.isColor = oldColor\\\
+os.pullEvent = oldPullEvent\\\
+\",\
+}",
+  config = "{\
+  main = \"bluecloud.lua\",\
+  name = \"BlueCloud\",\
+  id = \"ale32bit.bluecloud\",\
+  author = \"Ale32bit\",\
+  version = 1,\
+}",
+}
