@@ -1,0 +1,314 @@
+--
+-- sPhone Application Package
+-- Built with SPK builder 1.1
+--
+{
+  files = "{\
+  [ \"qpay.lua\" ] = \"local devMode = true\\r\\\
+\\r\\\
+rednet.open(\\\"back\\\")\\r\\\
+\\r\\\
+local versionUrl = \\\"https://raw.github.com/jakemroman/QuantumPay/master/version\\\"\\r\\\
+local kristUrl = \\\"https://raw.github.com/jakemroman/JakeHub/master/kstapi\\\"\\r\\\
+local walletUrl = \\\"https://raw.github.com/jakemroman/QuantumPay/master/wallet.lua\\\"\\r\\\
+local currentVersion = 1.2\\r\\\
+if not fs.exists(spk.getDataPath()..'/kristapi') then\\r\\\
+  f = spk.open(\\\"/kristapi\\\",\\\"w\\\")\\r\\\
+  f.writeLine(http.get(kristUrl).readAll())\\r\\\
+  f.close()\\r\\\
+end\\r\\\
+\\r\\\
+local function qpay()\\r\\\
+\\r\\\
+os.loadAPI(spk.getDataPath()..\\\"/kristapi\\\")\\r\\\
+\\r\\\
+function drawKrist(x,y)\\r\\\
+  term.setCursorPos(x,y)\\r\\\
+  term.setBackgroundColor(colors.white)\\r\\\
+  term.setTextColor(colors.lime)\\r\\\
+  write(\\\"/\\\")\\r\\\
+  term.setCursorPos(x+1,y)\\r\\\
+  term.setBackgroundColor(colors.lime)\\r\\\
+  term.setTextColor(colors.green)\\r\\\
+  write(\\\"\\\\\\\\\\\")\\r\\\
+  term.setCursorPos(x,y+1)\\r\\\
+  write(\\\"\\\\\\\\\\\")\\r\\\
+  term.setTextColor(colors.lime)\\r\\\
+  term.setBackgroundColor(colors.green)\\r\\\
+  write(\\\"/\\\")\\r\\\
+end\\r\\\
+\\r\\\
+term.setBackgroundColor(colors.lightGray)\\r\\\
+term.clear()\\r\\\
+drawKrist(2,2)\\r\\\
+drawKrist(5,2)\\r\\\
+drawKrist(8,2)\\r\\\
+drawKrist(11,2)\\r\\\
+drawKrist(14,2)\\r\\\
+drawKrist(17,2)\\r\\\
+drawKrist(20,2)\\r\\\
+drawKrist(23,2)\\r\\\
+term.setCursorPos(3,5)\\r\\\
+term.setBackgroundColor(colors.lightGray)\\r\\\
+term.setTextColor(colors.black)\\r\\\
+write(\\\"Sign into QuantumPay\\\")\\r\\\
+paintutils.drawLine(2,7,25,7,colors.white)\\r\\\
+term.setCursorPos(3,9)\\r\\\
+term.setBackgroundColor(colors.lightGray)\\r\\\
+term.setTextColor(colors.gray)\\r\\\
+write(\\\"QPay will never store\\\")\\r\\\
+term.setCursorPos(3,10)\\r\\\
+write(\\\"your password anywhere.\\\")\\r\\\
+term.setCursorPos(3,11)\\r\\\
+write(\\\"If you are new to Krist\\\")\\r\\\
+term.setCursorPos(3,12)\\r\\\
+write(\\\"type in any password\\\")\\r\\\
+term.setCursorPos(3,13)\\r\\\
+write(\\\"into the password box.\\\")\\r\\\
+local str = \\\"Version \\\"..tostring(currentVersion)\\r\\\
+term.setCursorPos(25-#str,19)\\r\\\
+write(str)\\r\\\
+term.setCursorPos(3,7)\\r\\\
+term.setBackgroundColor(colors.white)\\r\\\
+local password = read(\\\"*\\\")\\r\\\
+local address = kristapi.createaddress(password)\\r\\\
+rednet.broadcast({[\\\"command\\\"] = \\\"get\\\"})\\r\\\
+while true do\\r\\\
+  id,dataTable = rednet.receive()\\r\\\
+  if id == 3057 then\\r\\\
+    break\\r\\\
+  end\\r\\\
+end\\r\\\
+\\r\\\
+local function formatCoords(x,y,z)\\r\\\
+  return \\\"[\\\"..tostring(x)..\\\"-\\\"..tostring(y)..\\\"-\\\"..tostring(z)..\\\"]\\\"\\r\\\
+end\\r\\\
+\\r\\\
+while true do\\r\\\
+  term.setCursorPos(24,2)\\r\\\
+  term.setBackgroundColor(colors.lightGray)\\r\\\
+  term.setTextColor(colors.cyan)\\r\\\
+  write(\\\"@\\\")\\r\\\
+  local x,y,z = gps.locate()\\r\\\
+  term.setBackgroundColor(colors.lightGray)\\r\\\
+  term.clear()\\r\\\
+  if x then\\r\\\
+    term.setCursorPos(24,2)\\r\\\
+    term.setTextColor(colors.lime)\\r\\\
+    write(\\\"@\\\")\\r\\\
+    if not devMode then\\r\\\
+      term.current().setVisible(false)\\r\\\
+    end\\r\\\
+    x = math.floor(x)\\r\\\
+    y = math.floor(y)\\r\\\
+    z = math.floor(z)\\r\\\
+  else\\r\\\
+    term.setCursorPos(24,2)\\r\\\
+    term.setTextColor(colors.red)\\r\\\
+    write(\\\"@\\\")\\r\\\
+  end\\r\\\
+  --term.setBackgroundColor(colors.lightGray)\\r\\\
+  --term.clear()\\r\\\
+  drawKrist(2,2)\\r\\\
+  term.setCursorPos(5,2)\\r\\\
+  term.setBackgroundColor(colors.lightGray)\\r\\\
+  term.setTextColor(colors.black)\\r\\\
+  write(\\\"Quantum\\\")\\r\\\
+  term.setTextColor(colors.lime)\\r\\\
+  write(\\\"Pay\\\")\\r\\\
+  term.setCursorPos(5,3)\\r\\\
+  term.setTextColor(colors.gray)\\r\\\
+  write(\\\"Geo Krist Wallet\\\")\\r\\\
+  local formatted = formatCoords(x,y,z)\\r\\\
+  if formatted and dataTable then\\r\\\
+    if dataTable[formatted] then\\r\\\
+      term.setCursorPos(2,5)\\r\\\
+      term.setTextColor(colors.black)\\r\\\
+      write(\\\"Krist shop nearby!\\\")\\r\\\
+      term.setCursorPos(2,7)\\r\\\
+      term.setBackgroundColor(colors.white)\\r\\\
+      term.setTextColor(colors.gray)\\r\\\
+      write(\\\" Show \\\")\\r\\\
+    else\\r\\\
+      term.setCursorPos(2,5)\\r\\\
+      term.setTextColor(colors.black)\\r\\\
+      write(\\\"Stand in front of a\\\")\\r\\\
+      term.setCursorPos(2,6)\\r\\\
+      write(\\\"Krist shop machine.\\\")\\r\\\
+    end\\r\\\
+  else\\r\\\
+    term.setCursorPos(2,5)\\r\\\
+    term.setTextColor(colors.red)\\r\\\
+    if not dataTable then\\r\\\
+      print(\\\"Database invalid\\\")\\r\\\
+    elseif not formatted then\\r\\\
+      print(\\\"GPS signal lost\\\")\\r\\\
+    end\\r\\\
+  end\\r\\\
+  term.setBackgroundColor(colors.lightGray)\\r\\\
+  term.setCursorPos(24,2)\\r\\\
+  term.setTextColor(colors.lime)\\r\\\
+  --write(\\\"@\\\")\\r\\\
+  term.setCursorPos(2,19)\\r\\\
+  term.setBackgroundColor(colors.red)\\r\\\
+  term.setTextColor(colors.white)\\r\\\
+  write(\\\" Exit \\\")\\r\\\
+  term.setBackgroundColor(colors.white)\\r\\\
+  if not devMode then\\r\\\
+    term.current().setVisible(true)\\r\\\
+  end\\r\\\
+  local tmr = os.startTimer(5)\\r\\\
+  while true do\\r\\\
+    e,c,x,y = os.pullEvent()\\r\\\
+    if e == \\\"timer\\\" then\\r\\\
+      break\\r\\\
+    end\\r\\\
+    if e == \\\"mouse_click\\\" then\\r\\\
+      os.cancelTimer(tmr)\\r\\\
+      break\\r\\\
+    end\\r\\\
+  end\\r\\\
+  if e == \\\"mouse_click\\\" then\\r\\\
+    if x >= 2 and x <= 8 and y == 19 then\\r\\\
+      term.setBackgroundColor(colors.black)\\r\\\
+      term.clear()\\r\\\
+      term.setCursorPos(1,1)\\r\\\
+      return\\r\\\
+    end\\r\\\
+    if y == 7 then\\r\\\
+      term.setBackgroundColor(colors.lightGray)\\r\\\
+      term.clear()\\r\\\
+      local info = dataTable[formatted]\\r\\\
+      term.setCursorPos(2,2)\\r\\\
+      term.setTextColor(colors.black)\\r\\\
+      write(info[\\\"sells\\\"]..\\\" Shop\\\")\\r\\\
+      term.setCursorPos(2,3)\\r\\\
+      write(info[\\\"price\\\"]..\\\" KST each\\\")\\r\\\
+      term.setCursorPos(2,5)\\r\\\
+      term.setTextColor(colors.gray)\\r\\\
+      write(\\\"Select amount to buy\\\")\\r\\\
+      local amount = 0\\r\\\
+      while true do\\r\\\
+        paintutils.drawFilledBox(1,7,25,20,colors.lightGray)\\r\\\
+        term.setCursorPos(3,7)\\r\\\
+        term.setBackgroundColor(colors.white)\\r\\\
+        term.setTextColor(colors.black)\\r\\\
+        write(\\\"       Increase       \\\")\\r\\\
+        term.setCursorPos(3,11)\\r\\\
+        write(\\\"       Decrease       \\\")\\r\\\
+        term.setCursorPos(3,9)\\r\\\
+        term.setBackgroundColor(colors.lightGray)\\r\\\
+        term.setTextColor(colors.gray)\\r\\\
+        local str = (tostring(amount)..\\\" \\\"..info[\\\"sells\\\"])\\r\\\
+        local x,y = term.getSize()\\r\\\
+        local x = x / 2\\r\\\
+        local x = x - (#str / 2)\\r\\\
+        term.setCursorPos(x,9)\\r\\\
+        write(str)\\r\\\
+        term.setCursorPos(2,19)\\r\\\
+        term.setBackgroundColor(colors.lime)\\r\\\
+        term.setTextColor(colors.white)\\r\\\
+        write(\\\" Purchase \\\")\\r\\\
+        term.setCursorPos(2,17)\\r\\\
+        term.setBackgroundColor(colors.white)\\r\\\
+        term.setTextColor(colors.black)\\r\\\
+        write(\\\" Return \\\")\\r\\\
+        term.setCursorPos(2,15)\\r\\\
+        term.setBackgroundColor(colors.lightGray)\\r\\\
+        term.setTextColor(colors.black)\\r\\\
+        write(\\\"Total: \\\"..tostring(amount*info[\\\"price\\\"])..\\\" KST\\\")\\r\\\
+        term.setCursorPos(2,13)\\r\\\
+        write(\\\"Address: \\\"..info[\\\"address\\\"])\\r\\\
+        e,c,x,y = os.pullEvent(\\\"mouse_click\\\")\\r\\\
+        if y == 7 then\\r\\\
+          amount = amount + 1\\r\\\
+        end\\r\\\
+        if y == 11 and amount > 0 then\\r\\\
+          amount = amount - 1\\r\\\
+        end\\r\\\
+        if y == 17 then\\r\\\
+          break\\r\\\
+        end\\r\\\
+        if y == 19 then\\r\\\
+          local price = info[\\\"price\\\"] * amount\\r\\\
+          if tonumber(kristapi.balance(address)) >= price then\\r\\\
+            term.setCursorPos(2,15)\\r\\\
+            term.setBackgroundColor(colors.lightGray)\\r\\\
+            term.setTextColor(colors.black)\\r\\\
+            write(\\\"Funds Transfered.      \\\")\\r\\\
+            kristapi.give(info[\\\"address\\\"],price,password)\\r\\\
+            sleep(1.5)\\r\\\
+            break\\r\\\
+          else\\r\\\
+            term.setCursorPos(2,15)\\r\\\
+            term.setBackgroundColor(colors.lightGray)\\r\\\
+            term.setTextColor(colors.red)\\r\\\
+            write(\\\"Insufficent Funds      \\\")\\r\\\
+            sleep(1.5)\\r\\\
+            break\\r\\\
+          end\\r\\\
+        end\\r\\\
+      end\\r\\\
+    end\\r\\\
+    if x == 26 and y == 1 then\\r\\\
+      term.setBackgroundColor(colors.lightGray)\\r\\\
+      term.clear()\\r\\\
+      term.setCursorPos(2,2)\\r\\\
+      term.setTextColor(colors.black)\\r\\\
+      write(\\\"Add shop to database\\\")\\r\\\
+      term.setCursorPos(2,4)\\r\\\
+      write(\\\"Do you want to add?\\\")\\r\\\
+      write(\\\" Y/N\\\")\\r\\\
+      e,k = os.pullEvent(\\\"key\\\")\\r\\\
+      sleep(0)\\r\\\
+      if k == keys.y then\\r\\\
+        local dataTbl = {}\\r\\\
+        term.setCursorPos(2,6)\\r\\\
+        write(\\\"Sells: \\\")\\r\\\
+        dataTbl[\\\"sells\\\"] = read()\\r\\\
+        term.setCursorPos(2,7)\\r\\\
+        write(\\\"Price: \\\")\\r\\\
+        dataTbl[\\\"price\\\"] = tonumber(read())\\r\\\
+        term.setCursorPos(2,8)\\r\\\
+        write(\\\"Address: \\\")\\r\\\
+        dataTbl[\\\"address\\\"] = read()\\r\\\
+        term.setCursorPos(2,9)\\r\\\
+        write(\\\"Stand at the exact spot\\\")\\r\\\
+        term.setCursorPos(2,10)\\r\\\
+        write(\\\"then press any key\\\")\\r\\\
+        sleep(0)\\r\\\
+        os.pullEvent(\\\"key\\\")\\r\\\
+        x,y,z = gps.locate()\\r\\\
+        x = math.floor(x)\\r\\\
+        y = math.floor(y)\\r\\\
+        z = math.floor(z)\\r\\\
+        rednet.broadcast({\\r\\\
+          [\\\"command\\\"] = \\\"add\\\",\\r\\\
+          [\\\"data\\\"] = dataTbl,\\r\\\
+          [\\\"coords\\\"] = formatCoords(x,y,z),\\r\\\
+        })\\r\\\
+        dataTable[formatCoords(x,y,z)] = dataTbl\\r\\\
+      end\\r\\\
+    end\\r\\\
+  end\\r\\\
+end\\r\\\
+\\r\\\
+end\\r\\\
+\\r\\\
+local ok,err = pcall(qpay)\\r\\\
+term.setBackgroundColor(colors.black)\\r\\\
+term.clear()\\r\\\
+term.setCursorPos(1,1)\\r\\\
+if not ok then\\r\\\
+  print(\\\"Please report to Jake:\\\")\\r\\\
+  printError(err)\\r\\\
+end\",\
+}",
+  config = "{\
+  main = \"qpay.lua\",\
+  name = \"QPay\",\
+  id = \"quantumtech.qpay\",\
+  author = \"jakejakey1208\",\
+  version = 1.2,\
+}",
+}
