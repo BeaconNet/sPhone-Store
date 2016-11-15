@@ -13,6 +13,7 @@ local kristUrl = \\\"https://raw.github.com/jakemroman/JakeHub/master/kstapi\\\"
 local walletUrl = \\\"https://raw.github.com/jakemroman/QuantumPay/master/wallet.lua\\\"\\r\\\
 local currentVersion = 1.2\\r\\\
 if not fs.exists(spk.getDataPath()..'/kristapi') then\\r\\\
+	print(\\\"Downloading resources...\\\")\\r\\\
   f = spk.open(\\\"/kristapi\\\",\\\"w\\\")\\r\\\
   f.writeLine(http.get(kristUrl).readAll())\\r\\\
   f.close()\\r\\\
@@ -305,11 +306,11 @@ if not ok then\\r\\\
 end\",\
 }",
   config = "{\
-  main = \"qpay.lua\",\
+  type = \"app\",\
+  author = \"jakejakey1208\",\
   name = \"QPay\",\
   id = \"quantumtech.qpay\",\
-  author = \"jakejakey1208\",\
   version = 1.2,\
-  type = \"app\",\
+  main = \"qpay.lua\",\
 }",
 }
