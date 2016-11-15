@@ -785,12 +785,11 @@ end\\\
 \",\
 }",
   config = "{\
-  type = \"networking\",\
+  type = \"Networking\",\
   author = \"Ale32bit\",\
   name = \"Beam\",\
   id = \"ale32bit.beam\",\
   version = 2.2,\
   main = \"beam.lua\",\
-  type = \"Networking\",\
 }",
 }
