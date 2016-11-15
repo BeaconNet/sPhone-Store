@@ -765,5 +765,6 @@ os.pullEvent = oldPullEvent\\\
   id = \"ale32bit.bluecloud\",\
   author = \"Ale32bit\",\
   version = 1,\
+  type = \"Networking\",\
 }",
 }
