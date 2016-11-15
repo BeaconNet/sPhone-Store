@@ -310,5 +310,6 @@ end\",\
   id = \"quantumtech.qpay\",\
   author = \"jakejakey1208\",\
   version = 1.2,\
+  type = \"app\",\
 }",
 }
