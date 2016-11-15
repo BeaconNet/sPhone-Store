@@ -760,11 +760,11 @@ os.pullEvent = oldPullEvent\\\
 \",\
 }",
   config = "{\
+  type = \"Networking\",\
   main = \"bluecloud.lua\",\
   name = \"BlueCloud\",\
   id = \"ale32bit.bluecloud\",\
   author = \"Ale32bit\",\
   version = 1,\
-  type = \"Networking\",\
 }",
 }
