@@ -791,5 +791,6 @@ end\\\
   id = \"ale32bit.beam\",\
   version = 2.2,\
   main = \"beam.lua\",\
+  type = \"Networking\",\
 }",
 }
