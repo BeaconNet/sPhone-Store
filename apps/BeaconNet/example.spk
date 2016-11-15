@@ -15,11 +15,11 @@ os.pullEvent(\\\"key\\\")\\\
 \",\
 }",
   config = "{\
+  type = \"app\",\
   main = \"exa.lua\",\
   name = \"SPK Example\",\
   id = \"sphone.examplespk\",\
-  author = \"BeaconNet\",\
   version = 1.3,\
-  type = \"app\",\
+  author = \"BeaconNet\",\
 }",
 }
