@@ -404,15 +404,15 @@ term.setCursorPos(1,1)\\\
 \",\
   [ \"homeplus.lua\" ] = \"\\\
 --setup\\\
-if not fs.exists(spk.getDataPath()..\\\"/icons/shellIcon\\\") then\\\
-	local f = spk.open(\\\"icons/shellIcon\\\",\\\"w\\\")\\\
+if not fs.exists(spk.getDataPath()..\\\"/icons/sphone.shell\\\") then\\\
+	local f = spk.open(\\\"icons/sphone.shell\\\",\\\"w\\\")\\\
 	f.write(\\\"4fff\\\\nf4ff\\\\n4f44\\\")\\\
 	f.close()\\\
 end\\\
 \\\
 if not fs.exists(spk.getDataPath()..\\\"/config\\\") then\\\
 	local f = spk.open(\\\"config\\\",\\\"w\\\")\\\
-	f.write(\\\"{[1] = {\\\\\\\"Shell\\\\\\\", \\\\\\\"/rom/programs/shell\\\\\\\"},}\\\")\\\
+	f.write(\\\"{[1] = {\\\\\\\"Shell\\\\\\\", \\\\\\\"sphone.launch\\\\\\\"},}\\\")\\\
 	f.close()\\\
 end\\\
 \\\
@@ -495,34 +495,28 @@ local function homeSettings()\\\
 						for k, v in pairs(iconPos) do\\\
 							if (x >= v[1] and y >= v[2]) and (x <= v[3] and y <= v[4]) then\\\
 								local iconPoss = k\\\
-								term.setBackgroundColor(sPhone.theme[\\\"backgroundColor\\\"])\\\
-								term.setTextColor(sPhone.theme[\\\"text\\\"])\\\
-								term.clear()\\\
-								sPhone.header(\\\"Home+: Add\\\")\\\
-								term.setCursorPos(1,3)\\\
-								visum.align(\\\"center\\\",\\\"  Path\\\",false,3)\\\
-								visum.align(\\\"center\\\",\\\"  (Blank to cancel)\\\",false,4)\\\
-								term.setCursorPos(2,6)\\\
-								write(\\\"/\\\")\\\
-								local path = read()\\\
-								if path ~= \\\"\\\" then\\\
-									if not fs.exists(\\\"/\\\"..path) then\\\
-										sPhone.winOk(\\\"App not found\\\")\\\
-										return\\\
-									else\\\
-										visum.align(\\\"center\\\",\\\"  Name\\\",false,8)\\\
-										term.setCursorPos(2,10)\\\
-										local name = read()\\\
-										local f = spk.open(\\\"config\\\",\\\"r\\\")\\\
-										local ics = textutils.unserialise(f.readAll())\\\
-										f.close()\\\
-										ics[iconPoss] = {name,path}\\\
-										objectsDesktop[iconPoss] = {name,path}\\\
-										local f = spk.open(\\\"config\\\",\\\"w\\\")\\\
-										f.write(textutils.serialize(ics))\\\
-										f.close()\\\
-										sPhone.winOk(\\\"Done!\\\")\\\
-									end\\\
+								local ll = config.list(\\\"/.sPhone/config/spklist\\\")\\\
+								-- for k,v in pairs(ll) do\\\
+									-- if config.read\\\
+								-- end\\\
+								local spkID,name = sPhone.list(nil,{\\\
+									list = ll,\\\
+									pairs = true,\\\
+									title = \\\" Add App\\\"\\\
+								})\\\
+								if not spkID then\\\
+									return\\\
+								else\\\
+									local f = spk.open(\\\"config\\\",\\\"r\\\")\\\
+									local ics = textutils.unserialise(f.readAll())\\\
+									f.close()\\\
+									ics[iconPoss] = {name,spkID}\\\
+									objectsDesktop[iconPoss] = {name,spkID}\\\
+									local f = spk.open(\\\"config\\\",\\\"w\\\")\\\
+									f.write(textutils.serialize(ics))\\\
+									f.close()\\\
+									shell.run(spk.getPath()..\\\"/files/paint.lua\\\",spk.getDataPath()..\\\"/icons/\\\"..spkID)\\\
+									sPhone.winOk(\\\"Done!\\\")\\\
 								end\\\
 								break\\\
 							end\\\
@@ -591,11 +585,11 @@ local function footer()\\\
 	}\\\
 	\\\
 	while true do\\\
-		local name, id = sPhone.menu(menu,\\\"Home\\\",\\\"V\\\")\\\
+		local name, id = sPhone.menu(menu,\\\"Home+\\\",\\\"V\\\")\\\
 		if id == 0 then\\\
 			break\\\
 		elseif id == 1 then\\\
-			shell.run(\\\"/.sPhone/apps/system/settings\\\")\\\
+			sPhone.launch(\\\"sphone.settings\\\")\\\
 			break\\\
 		elseif id == 2 then\\\
 			homeSettings()\\\
@@ -603,7 +597,7 @@ local function footer()\\\
 			sPhone.login()\\\
 			break\\\
 		elseif id == 4 then\\\
-			shell.run(\\\"/.sPhone/apps/system/info\\\")\\\
+			sPhone.launch(\\\"sphone.info\\\")\\\
 			break\\\
 		elseif id == 5 then\\\
 			os.shutdown()\\\
@@ -621,7 +615,13 @@ local function redraw()\\\
 	for k, v in pairs(objectsDesktop) do\\\
 		local x, y,endx,endy = getCoords(k)\\\
 		objCoords[k] = {x,y,endx,endy}\\\
-		local icon = paintutils.loadImage(spk.getDataPath()..\\\"/icons/shellIcon\\\")\\\
+		local loI\\\
+		if not fs.exists(spk.getDataPath()..\\\"/icons/\\\"..v[2]) then\\\
+			loI  = spk.getDataPath()..\\\"/icons/sphone.shell\\\"\\\
+		else\\\
+			loI = spk.getDataPath()..\\\"/icons/\\\"..v[2]\\\
+		end\\\
+		local icon = paintutils.loadImage(loI)\\\
 		paintutils.drawImage(icon,x,y)\\\
 		local name, sndName\\\
 		if #v[1] > 5 then\\\
@@ -661,7 +661,7 @@ local function main()\\\
 			term.clear()\\\
 			term.setCursorPos(1,1)\\\
 			sleep(0.1)\\\
-			shell.run(\\\"/rom/programs/shell\\\")\\\
+			sPhone.launch(\\\"sphone.shell\\\")\\\
 			sPhone.inHome = true\\\
 		elseif ev[1] == \\\"mouse_click\\\" then\\\
 			local x, y = ev[3], ev[4]\\\
@@ -670,7 +670,7 @@ local function main()\\\
 				if x >= 12 and x <= 15 then\\\
 					sPhone.inHome = false\\\
 					sleep(0.1)\\\
-					shell.run(\\\"/.sPhone/apps/appList\\\")\\\
+					sPhone.launch(\\\"sphone.appList\\\")\\\
 					sPhone.inHome = true\\\
 				elseif x == w-6 then\\\
 					sPhone.inHome = false\\\
@@ -679,7 +679,7 @@ local function main()\\\
 					term.clear()\\\
 					term.setCursorPos(1,1)\\\
 					sleep(0.1)\\\
-					shell.run(\\\"/.sPhone/apps/store\\\")\\\
+					sPhone.launch(\\\"sphone.store\\\")\\\
 					sPhone.inHome = true\\\
 				elseif x <= w-1 and x >= w-3 then\\\
 					sPhone.inHome = false\\\
@@ -689,16 +689,9 @@ local function main()\\\
 			else\\\
 				local appName, appPath = getProgram(x,y)\\\
 				if appName then\\\
-					if fs.exists(appPath) then\\\
-						sPhone.inHome = false\\\
-						term.setBackgroundColor(colors.black)\\\
-						term.setTextColor(colors.white)\\\
-						term.clear()\\\
-						term.setCursorPos(1,1)\\\
-						sleep(0.1)\\\
-						shell.run(appPath)\\\
-						sPhone.inHome = true\\\
-					end\\\
+					sPhone.inHome = false\\\
+					sPhone.launch(appPath)\\\
+					sPhone.inHome = true\\\
 				end\\\
 			end\\\
 		end\\\
@@ -727,7 +720,7 @@ parallel.waitForAll(main,clockUpdate)\\\
   config = "{\
   type = \"home\",\
   name = \"Home+\",\
-  version = 1,\
+  version = 2,\
   main = \"homeplus.lua\",\
   id = \"ale32bit.homeplus\",\
   author = \"Ale32bit\",\
